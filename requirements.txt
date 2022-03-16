@@ -1,0 +1,5 @@
+numpy
+matplotlib
+casadi==3.5.5
+bisect
+rospkg
