@@ -257,7 +257,6 @@ def mpc_api(ref_traj, solver, N, T, v_max, omega_max):
     # mpc controller
     u0,x_m = mpc(solver, ref_traj[:,:N+1], T, N, v_max, omega_max)
     
-    '''
     ####################visualization########################
     obj = 0 #### cost
     # Q = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 0.0]])
@@ -275,15 +274,19 @@ def mpc_api(ref_traj, solver, N, T, v_max, omega_max):
     # plt.plot(ref_traj[0,:], ref_traj[1,:], "-r", label="input")
     plt.scatter(ref_traj[0,:], ref_traj[1,:], s=(0.5)**2)
     plt.plot(x_m[0,:], x_m[1,:], "xb", label="mpc")
+    plt.legend(['reference trajectory', 'mpc predicted states'], loc = "lower right")
+    plt.xlabel("x axes frame")
+    plt.ylabel("y axes frame")
 
+    '''
     for i in range(N+1):
         plt.text(ref_traj[0,i], ref_traj[1,i], str(i))
         plt.text(x_m[0,i], x_m[1,i], str(i), color="red")
+    '''
 
     plt.grid(True)
     plt.show()
     plt.close()
-    ''' 
     return u0
  
 if __name__ == '__main__':
