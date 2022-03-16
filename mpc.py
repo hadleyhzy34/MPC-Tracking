@@ -145,10 +145,10 @@ def mpc(solver, ref_traj, T, N, v_max, omega_max):
     # import ipdb;ipdb.set_trace()
     u0 = estimated_opt[:int(2*N)].reshape(N, 2).T # (n_controls, N)
     x_m = estimated_opt[int(2*N):].reshape(N+1, 3).T #(n_states, N+1)
-    import ipdb;ipdb.set_trace()
+    # import ipdb;ipdb.set_trace()
     return u0[:,0], x_m
    
-def mpc_api(ref_path, N, T, v_max, omega_max):
+def mpc_api_(ref_path, N, T, v_max, omega_max):
     '''
     description: mpc path tracking
     args:
@@ -220,6 +220,72 @@ def mpc_api(ref_path, N, T, v_max, omega_max):
     plt.close()
     return u0
 
+def mpc_api(ref_traj, solver, N, T, v_max, omega_max):
+    '''
+    args:
+    description: mpc path tracking
+    args:
+        ref_path:shape(5||10||15, 2)
+        solver: nlp solver
+        N:number of horizon
+        T:sampling time
+        v_max:linear velocity
+        omega_max:angular velocity
+    return:
+        U0:[linear_velocity, angular_velocity]
+    '''
+
+    ####################spline reference trajectory################
+    # import ipdb;ipdb.set_trace()
+    x = ref_path[:,0]
+    y = ref_path[:,1]
+
+    ds = T * v_max/2
+    
+    sp = Spline2D(x,y)
+    s = np.arange(0, sp.s[-1], ds)
+    
+    ref_traj = []
+    for i, i_s in enumerate(s):
+        ix, iy = sp.calc_position(i_s)
+        ref_traj.append([ix,iy,0.0])
+
+    # import ipdb;ipdb.set_trace()
+    ref_traj = np.array(ref_traj)
+    ref_traj = ref_traj.T
+
+    # mpc controller
+    u0,x_m = mpc(solver, ref_traj[:,:N+1], T, N, v_max, omega_max)
+    
+    '''
+    ####################visualization########################
+    obj = 0 #### cost
+    # Q = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 0.0]])
+    Q = np.array([[10.0, 0.0, 0.0],[0.0, 10.0, 0.0],[0.0, 0.0, 0.0]])
+    
+
+    # import ipdb;ipdb.set_trace()
+    for i in range(N):
+        state_error_ = x_m[:, i] - ref_traj[:, i]
+        obj = obj + state_error_.T.dot(Q).dot(state_error_)
+        # obj = obj + ca.mtimes([state_error_.T, Q, state_error_]) 
+    print("obj is: ", obj)
+
+    # visualization
+    # plt.plot(ref_traj[0,:], ref_traj[1,:], "-r", label="input")
+    plt.scatter(ref_traj[0,:], ref_traj[1,:], s=(0.5)**2)
+    plt.plot(x_m[0,:], x_m[1,:], "xb", label="mpc")
+
+    for i in range(N+1):
+        plt.text(ref_traj[0,i], ref_traj[1,i], str(i))
+        plt.text(x_m[0,i], x_m[1,i], str(i), color="red")
+
+    plt.grid(True)
+    plt.show()
+    plt.close()
+    ''' 
+    return u0
+ 
 if __name__ == '__main__':
     print('spline 2D test')
     ref_path = np.array([[0.0, 0.0],
@@ -228,5 +294,14 @@ if __name__ == '__main__':
                          [0.5, 0.4],
                          [0.6, 0.6],
                          [0.8, 0.7]])
-    res = mpc_api(ref_path, 50, 0.1, 0.15, 0.5)
+
+    T = 0.1
+    N = 50
+    v_max = 0.15
+    omega_max = 0.5
+    
+    # declare solver only needed once, inside agent class or sth similar
+    solver = forward(T, N)
+    # mpc controller, return [linear_velocity, angular_velocity]
+    res = mpc_api(ref_path, solver, N, T, v_max, omega_max)
     print(res)
